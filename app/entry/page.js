@@ -1,5 +1,9 @@
 "use client";
+import { redirect } from "next/navigation";
 
+export default function Home() {
+  redirect("/entry");
+}
 import { members } from "../lib/members";
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
