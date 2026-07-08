@@ -1,7 +1,10 @@
 "use client";
+
 import { members } from "../lib/members";
 import { useState, useEffect } from "react";
-import { db } from "../lib/firebase";
+import { useRouter } from "next/navigation";
+import { db, auth } from "../lib/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function EntryPage() {
@@ -9,30 +12,37 @@ export default function EntryPage() {
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const router = useRouter();
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const saved = localStorage.getItem("pkl_member");
+      if (saved) {
+        setSelectedMember(JSON.parse(saved));
+      }
+      setCheckingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    localStorage.removeItem("pkl_member");
+    router.push("/login");
+  };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     setPhoto(file);
   };
-const [selectedMember, setSelectedMember] = useState(null);
-const [isClient, setIsClient] = useState(false);
-
-useEffect(() => {
-  setIsClient(true);
-  const saved = localStorage.getItem("pkl_member");
-  if (saved) {
-    setSelectedMember(JSON.parse(saved));
-  }
-}, []);
-
-const handleMemberChange = (e) => {
-  console.log("Selected value:", e.target.value);
-  const member = members.find((m) => m.nim === e.target.value);
-  console.log("Found member:", member);
-  setSelectedMember(member);
-  localStorage.setItem("pkl_member", JSON.stringify(member));
-};
 
   const uploadToCloudinary = async (file) => {
     const formData = new FormData();
@@ -91,31 +101,25 @@ const handleSubmit = async (e) => {
 
   setSaving(false);
 };
+if (checkingAuth) {
+  return <p className="text-slate-500">Memuat...</p>;
+}
+
 return (
   <div>
-    <h1 className="text-2xl font-semibold text-blue-900 mb-6">Absen Harian</h1>
-
-    <div className="mb-4">
-      <label className="block text-sm font-medium text-slate-600 mb-1">
-        Nama
-      </label>
-      {isClient ? (
-        <select
-          value={selectedMember?.nim || ""}
-          onChange={handleMemberChange}
-          className="border border-slate-300 rounded-md p-2 w-full bg-white"
-        >
-          <option value="">Pilih Nama Anda</option>
-          {members.map((m) => (
-            <option key={m.nim} value={m.nim}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <p className="text-slate-400 text-sm">Loading...</p>
-      )}
+    <div className="flex items-center justify-between mb-6">
+      <h1 className="text-2xl font-semibold text-blue-900">Absen Harian</h1>
+      <button
+        onClick={handleLogout}
+        className="text-sm text-red-600 hover:underline"
+      >
+        Logout
+      </button>
     </div>
+
+    <p className="text-slate-600 mb-4">
+      Login sebagai <span className="font-medium">{selectedMember?.name}</span>
+    </p>
 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
