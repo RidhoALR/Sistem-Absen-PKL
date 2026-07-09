@@ -19,26 +19,26 @@ function CheckinContent() {
       return;
     }
 
-    try {
-      const decoded = JSON.parse(atob(token));
-      const { email, password } = decoded;
+try {
+  const decoded = atob(token);
+  const [email, password] = decoded.split("|");
 
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          const member = members.find((m) => m.email === email);
-          if (member) {
-            localStorage.setItem("pkl_member", JSON.stringify(member));
-          }
-          router.push("/entry");
-        })
-        .catch((err) => {
-          console.error(err);
-          setStatus("Gagal login otomatis. QR mungkin sudah tidak berlaku.");
-        });
-    } catch (err) {
+  signInWithEmailAndPassword(auth, email, password)
+    .then(() => {
+      const member = members.find((m) => m.email === email);
+      if (member) {
+        localStorage.setItem("pkl_member", JSON.stringify(member));
+      }
+      router.push("/entry");
+    })
+    .catch((err) => {
       console.error(err);
-      setStatus("QR tidak valid.");
-    }
+      setStatus("Gagal login otomatis. QR mungkin sudah tidak berlaku.");
+    });
+} catch (err) {
+  console.error(err);
+  setStatus("QR tidak valid.");
+}
   }, [searchParams, router]);
 
   return (
