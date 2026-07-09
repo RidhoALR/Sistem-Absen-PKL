@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { auth } from "../lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { members } from "../lib/members";
 
-export default function CheckinPage() {
+function CheckinContent() {
   const [status, setStatus] = useState("Memproses...");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,5 +45,13 @@ export default function CheckinPage() {
     <div className="max-w-sm mx-auto mt-20 text-center">
       <p className="text-slate-600">{status}</p>
     </div>
+  );
+}
+
+export default function CheckinPage() {
+  return (
+    <Suspense fallback={<p className="text-center mt-20 text-slate-500">Memuat...</p>}>
+      <CheckinContent />
+    </Suspense>
   );
 }
